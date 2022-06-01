@@ -3,10 +3,11 @@ States:
     Open set: nodes that still needs to be evaluated
     closed set: all the nodes that have finished been evaluated
 """
+from file_reader import File_reader
 from math import hypot
 import os
 
-FILE_NUMBER = 42
+FILE_NUMBER = 1
 PATH = os.path.dirname(os.path.abspath(__file__))
 obstacles = []
 
@@ -56,19 +57,20 @@ for i in range(len(spots)):
         spots[i][j].addNeighbors(spots)
 
 
+scene = File_reader(PATH + f'/scenes/Escena-Problema{FILE_NUMBER}.txt')
+posFinal_x = int((scene.qf_x - 0.25) * 2)
+posFinal_y = int(rows - 1 - (scene.qf_y - 0.25) * 2)
+
+posInicial_x = int((scene.q0_x - 0.25) * 2)
+posInicial_y = int(rows - 1 - scene.q0_y)
+
 # Definir Obstáculos
 obstacle_x = []
 obstacle_y = []
-obstacle_file = open(PATH + f'/obstacles/Obstacles_{FILE_NUMBER}.txt')
-obstacle_list = obstacle_file.read().split()
-#Posicion Final
-posFinal = obstacle_list.pop()
-#Posicion Inicial
-posInicial = obstacle_list.pop()
 
-for pair in obstacle_list:
-    obstacle_x.append(int(pair[0]))
-    obstacle_y.append(rows - 1 - int(pair[2]))
+for pair in scene.obstacle_list:
+    obstacle_x.append(pair[0])
+    obstacle_y.append(pair[1])
 
 obstaclesToPrint = []
 for i in range(len(obstacle_x)):
@@ -83,8 +85,8 @@ for x, y in zip(obstacle_x, obstacle_y):
 OpenSet = []
 closedSet = []
 
-start = spots[int(posInicial[0])][rows - 1 - int(posInicial[2])] # x, y
-end = spots[int(posFinal[0])][rows - 1 - int(posFinal[2])]
+start = spots[posInicial_x][posInicial_y] # x, y
+end = spots[posFinal_x][posFinal_y] #
 
 OpenSet.append(start)
 current = start

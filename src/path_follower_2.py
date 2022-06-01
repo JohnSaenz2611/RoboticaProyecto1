@@ -16,27 +16,27 @@ path_file.close()
 X = 1
 Y = -1
 
-if NUMERO_ESCENA == 4:
-    obstacle_file_2 = open(PATH + f'/obstacles/Obstacles_42.txt')
-    obstacle_list_2 = obstacle_file_2.read().split()
-    #Posicion Final
-    posFinal_2 = obstacle_list_2.pop()
-    posFinal_x_2, posFinal_y = map(float, posFinal_2.split(','))
-    #Posicion Inicial
-    posInicial_2 = obstacle_list_2.pop()
-    posInicial_x_2, posInicial_y_2 = map(float, posInicial_2.split(','))
+# if NUMERO_ESCENA == 4:
+#     obstacle_file_2 = open(PATH + f'/obstacles/Obstacles_42.txt')
+#     obstacle_list_2 = obstacle_file_2.read().split()
+#     #Posicion Final
+#     posFinal_2 = obstacle_list_2.pop()
+#     posFinal_x_2, posFinal_y = map(float, posFinal_2.split(','))
+#     #Posicion Inicial
+#     posInicial_2 = obstacle_list_2.pop()
+#     posInicial_x_2, posInicial_y_2 = map(float, posInicial_2.split(','))
 
-    path_file_2 = open(PATH + f'/paths/Path_list_42.txt')
-    PATH_LIST_2 = path_file_2.read().split('\n')
-    PATH_LIST_2.pop()
-    path_file_2.close()
-    TRANSFORMED_PATH_LIST_2 = []
-    for posicion in PATH_LIST_2:
-        pos_x, pos_y = map(int, posicion.split(','))
-        pos_x -= posInicial_x_2
-        pos_y -= posInicial_y_2
-        pos = f'{pos_x},{pos_y}'
-        TRANSFORMED_PATH_LIST_2.append(pos)
+#     path_file_2 = open(PATH + f'/paths/Path_list_42.txt')
+#     PATH_LIST_2 = path_file_2.read().split('\n')
+#     PATH_LIST_2.pop()
+#     path_file_2.close()
+#     TRANSFORMED_PATH_LIST_2 = []
+#     for posicion in PATH_LIST_2:
+#         pos_x, pos_y = map(int, posicion.split(','))
+#         pos_x -= posInicial_x_2
+#         pos_y -= posInicial_y_2
+#         pos = f'{pos_x},{pos_y}'
+#         TRANSFORMED_PATH_LIST_2.append(pos)
 
 MAX_SPEED = 0.5
 
