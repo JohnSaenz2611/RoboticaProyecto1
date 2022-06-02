@@ -7,7 +7,7 @@ from std_msgs.msg import Float32, Float32MultiArray
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Pose2D
 from file_reader import File_reader
-from A_star import A_star
+from A_star_class import A_star
 from A_star_relocate import A_star_relocate
 from tf.transformations import euler_from_quaternion
 

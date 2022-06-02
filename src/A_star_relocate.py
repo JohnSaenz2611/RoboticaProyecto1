@@ -170,4 +170,4 @@ class A_star_relocate(object):
         return hypot(a.x - b.x, a.y - b.y)
 
 if __name__ == '__main__':
-    a_star_reloc = A_star_relocate()
+    a_star_reloc = A_star_relocate(7)
