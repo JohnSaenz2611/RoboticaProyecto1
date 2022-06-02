@@ -22,7 +22,7 @@ class File_reader():
             self.obstacle_list.append(splited_line)
 
         path_file.close()
-        pprint.pprint(lines)
+        #pprint.pprint(lines)
 
     def split_line(self, lines, line_index) -> list:
         desired_line = ''.join(lines[line_index]).split(',')[1:]

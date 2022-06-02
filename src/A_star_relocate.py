@@ -39,8 +39,9 @@ class Spot(object):
         if self.y < (rows - 1):
             self.Neighbors.append(spots[self.x][self.y + 1])
 
-class A_star(object):
-    def __init__(self, numero_escena):
+
+class A_star_relocate(object):
+    def __init__(self, numero_escena) -> None:
         self.numero_escena = numero_escena
         self.path = []
         # Create the 2D array
@@ -49,13 +50,12 @@ class A_star(object):
             for j in range(len(spots[i])):
                 spots[i][j].addNeighbors(spots)
 
-
         scene = File_reader(PATH + f'/scenes/Escena-Problema{self.numero_escena}.txt')
-        posFinal_x = int((scene.qf_x - 0.25) * 2)
-        posFinal_y = int(rows - 1 - (scene.qf_y - 0.25) * 2)
+        posFinal_x = int((scene.qLoc_x - 0.25) * 2)
+        posFinal_y = int(rows - 1 - (scene.qLoc_y - 0.25) * 2)
 
-        posInicial_x = int((scene.q0_x - 0.25) * 2)
-        posInicial_y = int(rows - 1 - scene.q0_y)
+        posInicial_x = int((scene.qf_x - 0.25) * 2)
+        posInicial_y = int(rows - 1 - (scene.qf_y - 0.25) * 2)
 
         # Definir Obstáculos
         obstacle_x = []
@@ -83,6 +83,7 @@ class A_star(object):
 
         OpenSet.append(start)
         current = start
+
         gaming = True
         while gaming:
             #Find the path
@@ -117,7 +118,7 @@ class A_star(object):
                     #system('cls')
                     print('Finish!')
                     gaming = False
-                    path_file = open(PATH + f'/paths/Path_list_{self.numero_escena}.txt', 'w')
+                    path_file = open(PATH + f'/paths/Path_list_{self.numero_escena}_ReLoc.txt', 'w')
                     path = self.prepareList(path)
                     for spot in path:
                             self.path.append([spot.x, rows - 1 - spot.y])
@@ -157,15 +158,16 @@ class A_star(object):
                 gaming = False
                 pass
 
+
     def prepareList(self, list):
-            list.pop()
-            reversedList = []
-            for i in range(len(list)):
-                reversedList.append(list.pop())
-            return reversedList
+        list.pop()
+        reversedList = []
+        for i in range(len(list)):
+            reversedList.append(list.pop())
+        return reversedList
 
     def heuristic(self, a, b):
         return hypot(a.x - b.x, a.y - b.y)
 
 if __name__ == '__main__':
-    a_star = A_star(6)
+    a_star_reloc = A_star_relocate()

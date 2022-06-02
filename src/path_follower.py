@@ -6,8 +6,10 @@ import rospy
 from std_msgs.msg import Float32, Float32MultiArray
 from geometry_msgs.msg import Twist, Pose2D
 from file_reader import File_reader
+from A_star import A_star
+from A_star_relocate import A_star_relocate
 
-NUMERO_ESCENA = 1
+NUMERO_ESCENA = 3
 PATH = os.path.dirname(os.path.abspath(__file__))
 path_file = open(PATH + f'/paths/Path_list_{NUMERO_ESCENA}.txt')
 PATH_LIST = path_file.read().split('\n')
@@ -15,32 +17,29 @@ PATH_LIST.pop()
 path_file.close()
 X = 1
 Y = -1
+path_list = A_star(4)
+scene = File_reader(PATH + f'/scenes/Escena-Problema{NUMERO_ESCENA}.txt')
 
-if NUMERO_ESCENA == 4:
-    obstacle_file_2 = open(PATH + f'/obstacles/Obstacles_42.txt')
-    obstacle_list_2 = obstacle_file_2.read().split()
-    #Posicion Final
-    posFinal_2 = obstacle_list_2.pop()
-    posFinal_x_2, posFinal_y = map(float, posFinal_2.split(','))
-    #Posicion Inicial
-    posInicial_2 = obstacle_list_2.pop()
-    posInicial_x_2, posInicial_y_2 = map(float, posInicial_2.split(','))
+#Posicion Final
+posFinal_x_2 = scene.qLoc_x
+posFinal_y_2 = scene.qLoc_y
+#Posicion Inicial
+posInicial_x_2 = 0 if scene.qf_x == 0 else (scene.qf_x - 0.25) * 2 
+posInicial_y_2 = 0 if scene.qf_y == 0 else (scene.qf_y - 0.25) * 2 
 
-    path_file_2 = open(PATH + f'/paths/Path_list_42.txt')
-    PATH_LIST_2 = path_file_2.read().split('\n')
-    PATH_LIST_2.pop()
-    path_file_2.close()
-    TRANSFORMED_PATH_LIST_2 = []
-    for posicion in PATH_LIST_2:
-        pos_x, pos_y = map(int, posicion.split(','))
-        pos_x -= posInicial_x_2
-        pos_y -= posInicial_y_2
-        pos = f'{pos_x},{pos_y}'
-        TRANSFORMED_PATH_LIST_2.append(pos)
+path_file_2 = open(PATH + f'/paths/Path_list_{NUMERO_ESCENA}_ReLoc.txt')
+PATH_LIST_2 = path_file_2.read().split('\n')
+PATH_LIST_2.pop()
+path_file_2.close()
+TRANSFORMED_PATH_LIST_2 = []
+for posicion in PATH_LIST_2:
+    pos_x, pos_y = map(int, posicion.split(','))
+    pos_x -= posInicial_x_2
+    pos_y -= posInicial_y_2
+    pos = f'{pos_x},{pos_y}'
+    TRANSFORMED_PATH_LIST_2.append(pos)
 
 MAX_SPEED = 0.5
-
-scene = File_reader(PATH + f'/scenes/Escena-Problema{NUMERO_ESCENA}.txt')
 
 #Posicion Final
 posFinal_x, posFinal_y = [scene.qf_x, scene.qf_y]
@@ -220,8 +219,5 @@ class Main(object):
 
 if __name__ == '__main__':
     rospy.init_node('path_follower', anonymous=True, log_level=rospy.INFO)
-    main = Main(TRANSFORMED_PATH_LIST)
-    if NUMERO_ESCENA == 4:
-        Main(TRANSFORMED_PATH_LIST_2)
-    else:
-        main.move_forward(Y, 1)
+    Main(TRANSFORMED_PATH_LIST)
+    Main(TRANSFORMED_PATH_LIST_2)
