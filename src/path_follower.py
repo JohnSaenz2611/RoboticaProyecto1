@@ -11,7 +11,7 @@ from A_star_class import A_star
 from A_star_relocate import A_star_relocate
 from tf.transformations import euler_from_quaternion
 
-NUMERO_ESCENA = 7
+NUMERO_ESCENA = 1
 PATH = os.path.dirname(os.path.abspath(__file__))
 path_file = open(PATH + f'/paths/Path_list_{NUMERO_ESCENA}.txt')
 PATH_LIST = path_file.read().split('\n')
@@ -42,7 +42,6 @@ for posicion in PATH_LIST_2:
     TRANSFORMED_PATH_LIST_2.append(pos)
 
 MAX_SPEED = 0.5
-SPEED_MULTIPLIER = 0.1
 # Posicion Final
 posFinal_x, posFinal_y = [scene.qf_x, scene.qf_y]
 # Posicion Inicial
@@ -64,10 +63,10 @@ aux = aux.split(',')
 posFinal_x = 0 if float(aux[0]) == 0 else float(aux[0]) / 2 + 0.25
 posFinal_y = 0 if float(aux[1]) == 0 else float(aux[1]) / 2 + 0.25
 
-
 class Main(object):
     def __init__(self, path_list):
         self.path_list = path_list
+        self.max_speed_multiplier = 1
         self.position_x = 0.75  # Posicion actual del movil / de los sensores
         self.position_y = 0.75
         self.orientation = 0  # Orientacion actual del movil / de los sensores
@@ -190,6 +189,7 @@ class Main(object):
             return 0  # Nada
 
     def move_forward(self, direction, distancia):
+        self.max_speed_multiplier = 1
         rospy.loginfo('Moving forward')
         old_position_value_x = self.position_x
         old_position_value_y = self.position_y
@@ -198,18 +198,29 @@ class Main(object):
             if direction == Y:
                 #print(f"Posicion en Y: {self.position_y}")
                 #print(f"Posicion inicial en Y: {old_position_value_y + distancia}")
+                
+                # Cambiar el 0.1 si el robot no lee tan rapido
+                if self.position_y >= old_position_value_y + distancia - 0.1:
+                    self.max_speed_multiplier = 0.1
+
                 if (self.position_y >= old_position_value_y + distancia and (self.orientation > 88 and self.orientation < 92)) or (self.position_y <= old_position_value_y + distancia and (self.orientation < -88 and self.orientation > -92)):
                     keep_moving_forward = False
                     old_position_value_y = self.position_y
+
                 self.publish_velocities(MAX_SPEED, MAX_SPEED)
                 rospy.Rate.sleep(self.rate)
 
             elif direction == X:
                 #print(f"Posicion en X: {self.position_x}")
                 #print(f"Posicion inicial en X: {old_position_value_x + distancia}")
+
+                if self.position_x >= old_position_value_x + distancia - 0.1:
+                        self.max_speed_multiplier = 0.1
+
                 if ((self.position_x >= old_position_value_x + distancia) and (self.orientation > - 5 and self.orientation < 5)) or ((self.position_x <= old_position_value_x + distancia) and (((self.orientation < -175 and self.orientation > -185)) or (self.orientation > 175 and self.orientation < 185))):
                     keep_moving_forward = False
                     old_position_value_x = self.position_x
+
                 self.publish_velocities(MAX_SPEED, MAX_SPEED)
                 rospy.Rate.sleep(self.rate)
 
@@ -222,7 +233,12 @@ class Main(object):
         rospy.loginfo('Rotating 90 degrees')
         old_orientation_value = self.orientation
         keep_rotating = True
+        self.max_speed_multiplier = 1
         while keep_rotating and not rospy.is_shutdown():
+            
+            if abs(old_orientation_value - self.orientation) > 90 - 5:
+                # Cambiar el 0.01 si gira muy lento
+                self.max_speed_multiplier = 0.01
             keep_rotating = abs(old_orientation_value - self.orientation) < 90
             rospy.logdebug(keep_rotating)
             rospy.logdebug(
@@ -234,11 +250,11 @@ class Main(object):
             self.right_motor_speed_publisher.publish(0)
 
     def publish_velocities(self, rigth_speed, left_speed):
-        self.cmd_vel.linear.x = ((rigth_speed + left_speed) / 2) * SPEED_MULTIPLIER
-        self.cmd_vel.angular.z = ((rigth_speed - left_speed) / self.L) * 0.01
+        self.cmd_vel.linear.x = ((rigth_speed + left_speed) / 2) * self.max_speed_multiplier
+        self.cmd_vel.angular.z = ((rigth_speed - left_speed) / self.L) * self.max_speed_multiplier
 
-        self.right_motor_speed_publisher.publish(rigth_speed)
-        self.left_motor_speed_publisher.publish(left_speed)
+        self.right_motor_speed_publisher.publish(rigth_speed * self.max_speed_multiplier)
+        self.left_motor_speed_publisher.publish(left_speed * self.max_speed_multiplier)
         self.cmd_vel_publisher.publish(self.cmd_vel)
 
     def on_shutdown_cb(self):
