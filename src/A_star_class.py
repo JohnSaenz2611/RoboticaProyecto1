@@ -40,8 +40,7 @@ class Spot(object):
             self.Neighbors.append(spots[self.x][self.y + 1])
 
 class A_star(object):
-    def __init__(self, numero_escena):
-        self.numero_escena = numero_escena
+    def __init__(self, numero_escena, q0_x, q0_y, qf_x, qf_y, obstacle_list):
         self.path = []
         # Create the 2D array
         spots = [[Spot(i, j) for j in range(rows)] for i in range(cols)]
@@ -49,19 +48,17 @@ class A_star(object):
             for j in range(len(spots[i])):
                 spots[i][j].addNeighbors(spots)
 
+        posFinal_x = int((qf_x - 0.25) * 2)
+        posFinal_y = int(rows - 1 - (qf_y - 0.25) * 2)
 
-        scene = File_reader(PATH + f'/scenes/Escena-Problema{self.numero_escena}.txt')
-        posFinal_x = int((scene.qf_x - 0.25) * 2)
-        posFinal_y = int(rows - 1 - (scene.qf_y - 0.25) * 2)
-
-        posInicial_x = int((scene.q0_x - 0.25) * 2)
-        posInicial_y = int(rows - 1 - (scene.q0_y - 0.25) * 2)
+        posInicial_x = int((q0_x - 0.25) * 2)
+        posInicial_y = int(rows - 1 - (q0_y - 0.25) * 2)
 
         # Definir Obstáculos
         obstacle_x = []
         obstacle_y = []
 
-        for pair in scene.obstacle_list:
+        for pair in obstacle_list:
             obstacle_x.append(pair[0])
             obstacle_y.append(pair[1])
 
@@ -117,7 +114,7 @@ class A_star(object):
                     #system('cls')
                     print('Finish!')
                     gaming = False
-                    path_file = open(PATH + f'/paths/Path_list_{self.numero_escena}.txt', 'w')
+                    path_file = open(PATH + f'/paths/Path_list_{numero_escena}.txt', 'w')
                     path = self.prepareList(path)
                     for spot in path:
                             self.path.append([spot.x, rows - 1 - spot.y])
@@ -168,5 +165,5 @@ class A_star(object):
         return hypot(a.x - b.x, a.y - b.y)
 
 if __name__ == '__main__':
-    a_star = A_star(7)
+    #a_star = A_star(7)
     pass
