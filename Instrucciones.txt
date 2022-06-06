@@ -1,13 +1,12 @@
 Para la correcta ejecucion del proyecto se deben seguir las siguientes instrucciones:
-    - Para la creacion del camino solucion:
-        En la entrega los caminos de solucion estan calculados para todas las escenas,
-        sin embargo, se podrian eliminar y recalcular ejecutando el archivo A_star.py 
-        de la siguiente manera:
-            1. En el archivo A_star.py se debe cambiar el valor de la constante
-            FILE_NUMBER por el numero de la escena de la cual se quiera calcular el
-            camino.
-            2. Se ejecuta el archivo con el comando "python A_star.py".
+    
+    Requisito: 
+        como fue mencionado en el informe, las dimensiones del robot no son las adecuadas en la simulacion por lo tanto
+        se deben seguir los pasos indicados en el siguiente video: https://youtu.be/g9leJJLrVRo
+        antes de iniciar la simulacion.
     - Para la ejecucion del recorrido:
-        1. En el archivo path_follower.py cambiar el valor de la constante NUMERO_ESCENA
-        por el numero de la escena para la cual se quiera recorrer el camino solucion.
-        2. Ejecutar el nodo con el comando "rorsun proyecto1 path_follower.py"
+        2. Ejecutar el nodo con el comando "rorsun proyecto1 path_follower.py [NUMERO_ESCENA] [VEL_LINEAL] [VEL_ANGULAR]" donde numero escena debe ser 
+        un numero entero que corresponde al numero de la escena deseada.
+        VEL_LINEAL es un numero entero que corresponde al factor de multiplicacion de la velocidad lineal (usar solo en simulacion)
+        VEL_ANGULAR es un numero entero que corresponde al factor de multiplicacion de la velocidad angular (usar solo en simulacion)
+

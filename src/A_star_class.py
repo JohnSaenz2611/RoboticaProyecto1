@@ -81,6 +81,7 @@ class A_star(object):
         OpenSet.append(start)
         current = start
         gaming = True
+        newpath = False
         while gaming:
             #Find the path
             path = []
@@ -112,7 +113,7 @@ class A_star(object):
                         path.append(temp.previous)
                         temp = temp.previous
                     #system('cls')
-                    print('Finish!')
+                    print('Finish A_star Planning!')
                     gaming = False
                     path_file = open(PATH + f'/paths/Path_list_{numero_escena}.txt', 'w')
                     path = self.prepareList(path)

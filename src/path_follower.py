@@ -1,26 +1,34 @@
 #!/usr/bin/env python3
 
+from ast import While
 import os
 import sys
 from math import degrees
 import rospy
 from std_msgs.msg import Float32, Float32MultiArray
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import PointCloud
 from geometry_msgs.msg import Twist, Pose2D
 from file_reader import File_reader
 from A_star_class import A_star
 from tf.transformations import euler_from_quaternion
-
+    
 
 MAX_SPEED = 0.5
 try:
-    MAX_SPEED_LINEAL = float(sys.argv[1])
-    MAX_SPEED_ANGULAR = float(sys.argv[2])
+    MAX_SPEED_LINEAL = float(sys.argv[2])
+    MAX_SPEED_ANGULAR = float(sys.argv[3])
 except:
     MAX_SPEED_LINEAL = 1
     MAX_SPEED_ANGULAR = 1
 
-NUMERO_ESCENA = 1
+try:
+    NUMERO_ESCENA = int(sys.argv[1])
+except:
+    print('Ingrese numero de escena valido despues del comando de ejecucion (1 - 6)')
+    exit()
+
+print(f'Corriendo escena numero: {NUMERO_ESCENA}')
 PATH = os.path.dirname(os.path.abspath(__file__))
 scene = File_reader(PATH + f'/scenes/Escena-Problema{NUMERO_ESCENA}.txt')
 
@@ -67,14 +75,14 @@ posInicial_x = 0 if scene.q0_x == 0 else (scene.q0_x - 0.25) * 2
 posInicial_y = 0 if scene.q0_y == 0 else (scene.q0_y - 0.25) * 2
 
 def transform_path_list(path_list, posInicial_x, posInicial_y):
-    TRANSFORMED_PATH_LIST = []
+    TRANSFORMED_PATH = []
     for posicion in path_list:
         pos_x, pos_y = posicion
         pos_x -= posInicial_x
         pos_y -= posInicial_y
         pos = f'{pos_x},{pos_y}'
-        TRANSFORMED_PATH_LIST.append(pos)
-    return TRANSFORMED_PATH_LIST
+        TRANSFORMED_PATH.append(pos)
+    return TRANSFORMED_PATH
 
 TRANSFORMED_PATH_LIST = transform_path_list(PATH_LIST, posInicial_x, posInicial_y)
 
@@ -93,7 +101,7 @@ class Main(object):
         self.front_sensor = 0
         self.position_x = 0.75  # Posicion actual del movil / de los sensores
         self.position_y = 0.75
-        self.orientation = 0  # Orientacion actual del movil / de los sensores
+        self.orientation = scene.q0_theta  # Orientacion actual del movil / de los sensores
         self.cmd_vel = Twist()
         self.real_pose = Pose2D()
         self.rate = rospy.Rate(1/0.01)
@@ -112,12 +120,17 @@ class Main(object):
         rospy.Subscriber('/p3dxSensors', Float32MultiArray, callback=self.pioneer_copelia_sensors_cb, queue_size=1)
         self.angular_speed_publisher = rospy.Publisher('/angularSpeed', Float32, queue_size=1)
         rospy.on_shutdown(self.on_shutdown_cb)
+        # TODO: SUSTENTACION CREAR SUBSCRIBER SENSOR REAL
+        #rospy.Subscriber('/CAMBIAR_A_SENSOR_REAL', PointCloud, callback=self.p3dxSonar_cb, queue_size=1)
 
         rospy.Subscriber("/RosAria/pose", Odometry, callback=self.p3dxAngular_cb, queue_size=1)
 
         while not self.is_finish:
             self.follow_path()
-        
+
+    def p3dxSonar_cb(self, msg: PointCloud):
+        self.front_sensor = msg.points[4].x
+
     def pioneer_copelia_sensors_cb(self, msg: Float32MultiArray):
         self.front_sensor = msg.data[4]
         rospy.logdebug(self.front_sensor)
@@ -163,44 +176,47 @@ class Main(object):
             if goal_x > old_goal_x:
                 self.faced_rotation = 1 # Derecha
                 sentido = self.get_rotation(self.orientation, 0)
-                if sentido != 0:
+                while sentido != 0 and not rospy.is_shutdown():
                     self.rotate_90(sentido)
-                self.move_forward(X, 0.5)
+                    sentido = self.get_rotation(self.orientation, 0)
                 if self.look_for_obstacle(0.2):
                     break
+                self.move_forward(X, 0.5)
 
             # Esto si se tiene que mover hacia la izquierda
-            # TODO: Tener en cuenta el cambio de signo en el angulo cuando es 180
             elif goal_x < old_goal_x:
                 self.faced_rotation = -1 # Izquierda
                 sentido = self.get_rotation(self.orientation, 180)
-                if sentido != 0:
+                while sentido != 0 and not rospy.is_shutdown():
                     self.rotate_90(sentido)
-                self.move_forward(X, -0.5)
-                self.publish_velocities(0, 0)
+                    sentido = self.get_rotation(self.orientation, 180)
                 if self.look_for_obstacle(0.2):
                     break
+                self.move_forward(X, -0.5)
+                self.publish_velocities(0, 0)
 
             # Esto si se tiene que mover hacia arriba
             elif goal_y > old_goal_y:
                 self.faced_rotation = 2 # Arriba
                 sentido = self.get_rotation(self.orientation, 90)
-                if sentido != 0:
+                while sentido != 0 and not rospy.is_shutdown():
                     self.rotate_90(sentido)
-                self.move_forward(Y, 0.5)
-                self.publish_velocities(0, 0)
+                    sentido = self.get_rotation(self.orientation, 90)
                 if self.look_for_obstacle(0.2):
                     break
+                self.move_forward(Y, 0.5)
+                self.publish_velocities(0, 0)
 
             # Esto si se tiene que mover hacia abajo
             elif goal_y < old_goal_y:
                 self.faced_rotation = -2 # Abajo
                 sentido = self.get_rotation(self.orientation, -90)
-                if sentido != 0:
+                while sentido != 0 and not rospy.is_shutdown():
                     self.rotate_90(sentido)
-                self.move_forward(Y, -0.5)
+                    sentido = self.get_rotation(self.orientation, -90)
                 if self.look_for_obstacle(0.2):
                     break
+                self.move_forward(Y, -0.5)
 
             old_goal_x = goal_x
             old_goal_y = goal_y
@@ -230,6 +246,7 @@ class Main(object):
         if self.front_sensor != 0 and self.front_sensor < detection_distance:
             x = round((self.position_x - 0.25) * 2, 0) 
             y = 9 - round((self.position_y - 0.25) * 2, 0)
+            y_2 = round((self.position_y - 0.25) * 2, 0)
 
             if self.faced_rotation == 1: # Derecha
                 x += 1
@@ -237,13 +254,16 @@ class Main(object):
                 x -= 1
             if self.faced_rotation == 2: # Arriba
                 y -= 1
+                y_2 += 1
             if self.faced_rotation == -2: # Abajo
                 y += 1
+                y_2 -=1
 
             if [x, y] in scene.obstacle_list:
                 return False
             else:
                 scene.obstacle_list.append([x, y])
+                rospy.loginfo(f'New obstacle detected in: {[x / 2 + 0.25, y_2 / 2 + 0.25]}')
                 PATH_LIST = A_star(
                     numero_escena=NUMERO_ESCENA,
                     q0_x=(round((self.position_x - 0.25) * 2, 0)) / 2 + 0.25,
@@ -253,7 +273,7 @@ class Main(object):
                     obstacle_list=scene.obstacle_list
                 ).path
 
-                self.path_list = transform_path_list(PATH_LIST, posInicial_x, posInicial_y)
+                self.path_list = transform_path_list(PATH_LIST, (round((self.position_x - 0.25) * 2, 0)), (round((self.position_y - 0.25) * 2, 0)))
 
                 return True
         return False
@@ -268,12 +288,15 @@ class Main(object):
             if direction == Y:
                 #print(f"Posicion en Y: {self.position_y}")
                 #print(f"Posicion inicial en Y: {old_position_value_y + distancia}")
-                
+
                 # Cambiar el 0.1 si el robot no lee tan rapido
-                if self.position_y >= old_position_value_y + distancia - 0.1:
+                self.max_speed_multiplier = MAX_SPEED_LINEAL
+                if distancia >= 0 and self.position_y >= old_position_value_y + distancia - 0.1:
+                    self.max_speed_multiplier = 0.1
+                elif distancia <= 0 and self.position_y <= old_position_value_y - abs(distancia) + 0.1:
                     self.max_speed_multiplier = 0.1
 
-                if (self.position_y >= old_position_value_y + distancia and (self.orientation > 88 and self.orientation < 92)) or (self.position_y <= old_position_value_y + distancia and (self.orientation < -88 and self.orientation > -92)):
+                if (self.position_y >= old_position_value_y + distancia and (self.orientation > 85 and self.orientation < 95)) or (self.position_y <= old_position_value_y + distancia and (self.orientation < -85 and self.orientation > -95)):
                     keep_moving_forward = False
                     old_position_value_y = self.position_y
 
@@ -283,9 +306,13 @@ class Main(object):
             elif direction == X:
                 #print(f"Posicion en X: {self.position_x}")
                 #print(f"Posicion inicial en X: {old_position_value_x + distancia}")
+                self.max_speed_multiplier = MAX_SPEED_LINEAL
 
-                if self.position_x >= old_position_value_x + distancia - 0.1:
-                        self.max_speed_multiplier = 0.1
+                if distancia > 0 and self.position_x >= old_position_value_x + distancia - 0.1:
+                    self.max_speed_multiplier = 0.1
+
+                elif distancia < 0 and self.position_x <= old_position_value_x - abs(distancia) + 0.1:
+                    self.max_speed_multiplier = 0.1
 
                 if ((self.position_x >= old_position_value_x + distancia) and (self.orientation > - 5 and self.orientation < 5)) or ((self.position_x <= old_position_value_x + distancia) and (((self.orientation < -175 and self.orientation > -185)) or (self.orientation > 175 and self.orientation < 185))):
                     keep_moving_forward = False
@@ -309,7 +336,7 @@ class Main(object):
             if abs(old_orientation_value - self.orientation) > 90 - 5:
                 # Cambiar el 0.01 si gira muy lento
                 # TODO !!!!!!!!!!!!!!!
-                self.max_speed_multiplier = 2
+                self.max_speed_multiplier = 0.1
             keep_rotating = abs(old_orientation_value - self.orientation) < 90
             rospy.logdebug(keep_rotating)
             rospy.logdebug(
@@ -332,7 +359,6 @@ class Main(object):
         self.left_motor_speed_publisher.publish(0)
         self.right_motor_speed_publisher.publish(0)
         rospy.loginfo('Closing node')
-
 
 if __name__ == '__main__':
     rospy.init_node('path_follower', anonymous=True, log_level=rospy.INFO)
